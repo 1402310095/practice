@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>图片轮播</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        #container {
+            width: 1000px;
+            height: 409px;
+            margin: 20px auto;
+            background: #333;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #container .content {
+            width: 5000px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #container .content li {
+            float: left;
+        }
+
+        #container .pre, #container .next {
+            width: 45px;
+            height: 45px;
+            line-height: 45px;
+            text-align: center;
+            background-image: url(images/l.png);
+            background-repeat: no-repeat;
+            cursor: pointer;
+            position: absolute;
+            top: 190px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        #container .next {
+            left: auto;
+            right: 10px;
+            background-image: url(images/r.png);
+        }
+
+        #container {
+            z-index: 10;
+        }
+
+        #container .pointer {
+            text-align: center;
+            position: absolute;
+            bottom: 10px;
+            z-index: 100;
+        }
+
+        #container .pointer ul {
+            width: 120px;
+            margin: 0 auto;
+        }
+
+        #container .pointer ul li {
+            float: left;
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            background: #fff;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+
+        #container .pointer .thistitle {
+            background: #69aaec;
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <div class="pre"></div>
+    <div class="next"></div>
+    <div class="pointer">
+        <ul>
+            <li class="thistitle"></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+        </ul>
+    </div>
+    <div class="content">
+        <ul>
+            <li style="background: red;width: 1000px;height: 410px;">
+            </li>
+            <li style="background: blue;width: 1000px;height: 410px;">
+            </li>
+            <li style="background: yellow;width: 1000px;height: 410px;">
+            </li>
+            <li style="background: grey;width: 1000px;height: 410px;">
+            </li>
+            <li style="background: green;width: 1000px;height: 410px;">
+            </li>
+        </ul>
+    </div>
+</div>
+<div id="config">
+    <input class="inputspeed" value="3000"/>
+    <button class="speedbutton">设置滚动速度（毫秒）</button>
+    <input class="inputnum" value="5"/>
+    <button class="numbutton">设置图片数量</button>
+</div>
+<script type="text/javascript">
+    window.onload = function () {
+        load();
+    }
+
+    function load() {
+        var oDiv = document.getElementById('container');
+        var oConfig = document.getElementById('config');
+        var speedButton = getByClass(oConfig, 'speedbutton')[0];
+        var numButton = getByClass(oConfig, 'numbutton')[0];
+        var oPre = getByClass(oDiv, 'pre')[0];
+        var oNext = getByClass(oDiv, 'next')[0];
+        var oUlBig = getByClass(oDiv, 'content')[0];
+        var aBigUl = oUlBig.getElementsByTagName('ul')[0];
+        var aBigLi = oUlBig.getElementsByTagName('li');
+        var oDivSmall = getByClass(oDiv, 'pointer')[0];
+        var aUlSmall = oDivSmall.getElementsByTagName('ul')[0];
+        var aLiSmall = oDivSmall.getElementsByTagName('li');
+        var now = 0;
+        var moveSpeed = getByClass(oConfig, 'inputspeed')[0].value; // 默认滚动速度3000
+        var imgNum = parseInt(getByClass(oConfig, 'inputnum')[0].value);
+
+        function tab() {
+            for (var i = 0; i < aLiSmall.length; i++) {
+                aLiSmall[i].className = '';
+            }
+            aLiSmall[now].className = 'thistitle';
+            startMove(oUlBig, 'left', -(now * aBigLi[0].offsetWidth))
+        }
+
+        for (var i = 0; i < aLiSmall.length; i++) {
+            aLiSmall[i].index = i;
+            aLiSmall[i].onmouseover = function () {
+                now = this.index;
+                tab();
+            }
+        }
+        oPre.onclick = function () {
+            now--;
+            if (now == -1) {
+                now = aBigLi.length - 1;
+            }
+            tab();
+        }
+        oNext.onclick = function () {
+            now++;
+            if (now == aBigLi.length) {
+                now = 0;
+            }
+            tab();
+        }
+        var timer = setInterval(oNext.onclick, moveSpeed);
+        oDiv.onmouseover = function () {
+            clearInterval(timer)
+        }
+        oDiv.onmouseout = function () {
+            timer = setInterval(oNext.onclick, moveSpeed)
+        }
+        speedButton.onclick = function () {
+            clearInterval(timer);
+            moveSpeed = getByClass(oConfig, 'inputspeed')[0].value;
+            timer = setInterval(oNext.onclick, moveSpeed)
+        }
+        numButton.onclick = function () {
+            clearInterval(timer);
+            imgNum = parseInt(getByClass(oConfig, 'inputnum')[0].value);
+            removeChildren(aBigUl, aBigLi);
+            removeChildren(aUlSmall, aLiSmall);
+            for (var i = 0; i < imgNum; i++) {
+                aBigUl.appendChild(createImg());
+                aUlSmall.appendChild(createPoint());
+            }
+            oUlBig.style.width = imgNum * 1000 + 'px';
+            timer = setInterval(oNext.onclick, moveSpeed);
+            startMove();
+        }
+    }
+
+    function removeChildren(parent, children) {
+        while (children.length > 0) {
+            parent.removeChild(children[0])
+        }
+    }
+
+    function getColor() {
+        var colorValue = '0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f';
+        var colorArray = colorValue.split(',');
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += colorArray[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    function createImg() {
+        var img = document.createElement('li');
+        img.style.backgroundColor = getColor();
+        img.style.height = '410px';
+        img.style.width = '1000px';
+        return img
+    }
+
+    function createPoint() {
+        return document.createElement('li');
+    }
+
+    function getStyle(obj, name) {
+        if (obj.currentStyle) {
+            return obj.currentStyle[name]
+        } else {
+            return getComputedStyle(obj, false)[name]
+        }
+    }
+
+    function getByClass(oParent, nClass) {
+        var eLe = oParent.getElementsByTagName('*');
+        var aRrent = [];
+        for (var i = 0; i < eLe.length; i++) {
+            if (eLe[i].className == nClass) {
+                aRrent.push(eLe[i]);
+            }
+        }
+        return aRrent;
+    }
+
+    function startMove(obj, att, add) {
+        clearInterval(obj.timer);
+        obj.timer = setInterval(function () {
+            var cutt = 0;
+            cutt = Math.round(parseInt(getStyle(obj, att)));
+            var speed = (add - cutt) / 8;
+            speed = speed > 0 ? Math.ceil(speed) : Math.floor(speed);
+            if (cutt == add) {
+                clearInterval(obj.timer)
+            } else {
+                obj.style[att] = cutt + speed + 'px';
+            }
+        }, 30)
+    }
+
+</script>
+</body>
+</html>
